@@ -892,3 +892,123 @@ initCalculator();
         }
     });
 })();
+
+// ============================================
+// Gallery Lightbox
+// ============================================
+(function initLightbox() {
+    const overlay = document.getElementById('lightboxOverlay');
+    const img = document.getElementById('lightboxImg');
+    const closeBtn = document.getElementById('lightboxClose');
+    const prevBtn = document.getElementById('lightboxPrev');
+    const nextBtn = document.getElementById('lightboxNext');
+    const counter = document.getElementById('lightboxCounter');
+
+    if (!overlay || !img) return;
+
+    let galleryImages = [];
+    let currentIndex = 0;
+
+    function collectImages() {
+        galleryImages = Array.from(document.querySelectorAll('#fleetGrid .fleet-photo-card img'));
+    }
+
+    function openLightbox(index) {
+        collectImages();
+        if (index < 0 || index >= galleryImages.length) return;
+        currentIndex = index;
+        img.src = galleryImages[currentIndex].src;
+        counter.textContent = `${currentIndex + 1} / ${galleryImages.length}`;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        updateNavButtons();
+    }
+
+    function closeLightbox() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => { img.src = ''; }, 350);
+    }
+
+    function showPrev() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            img.style.opacity = '0';
+            img.style.transform = 'scale(0.9) translateX(30px)';
+            setTimeout(() => {
+                img.src = galleryImages[currentIndex].src;
+                counter.textContent = `${currentIndex + 1} / ${galleryImages.length}`;
+                img.style.opacity = '1';
+                img.style.transform = 'scale(1) translateX(0)';
+                updateNavButtons();
+            }, 150);
+        }
+    }
+
+    function showNext() {
+        if (currentIndex < galleryImages.length - 1) {
+            currentIndex++;
+            img.style.opacity = '0';
+            img.style.transform = 'scale(0.9) translateX(-30px)';
+            setTimeout(() => {
+                img.src = galleryImages[currentIndex].src;
+                counter.textContent = `${currentIndex + 1} / ${galleryImages.length}`;
+                img.style.opacity = '1';
+                img.style.transform = 'scale(1) translateX(0)';
+                updateNavButtons();
+            }, 150);
+        }
+    }
+
+    function updateNavButtons() {
+        prevBtn.style.opacity = currentIndex <= 0 ? '0.3' : '1';
+        prevBtn.style.pointerEvents = currentIndex <= 0 ? 'none' : 'auto';
+        nextBtn.style.opacity = currentIndex >= galleryImages.length - 1 ? '0.3' : '1';
+        nextBtn.style.pointerEvents = currentIndex >= galleryImages.length - 1 ? 'none' : 'auto';
+    }
+
+    // Click on gallery photos
+    document.getElementById('fleetGrid').addEventListener('click', (e) => {
+        const card = e.target.closest('.fleet-photo-card');
+        if (!card) return;
+        collectImages();
+        const cardImg = card.querySelector('img');
+        const index = galleryImages.indexOf(cardImg);
+        if (index !== -1) openLightbox(index);
+    });
+
+    // Close
+    closeBtn.addEventListener('click', closeLightbox);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeLightbox();
+    });
+
+    // Navigation
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); showPrev(); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); showNext(); });
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+        if (!overlay.classList.contains('active')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+    });
+
+    // Touch swipe
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    img.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    img.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) showNext();
+            else showPrev();
+        }
+    }, { passive: true });
+})();
